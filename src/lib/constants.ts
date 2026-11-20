@@ -76,8 +76,18 @@ export const TAG_COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444"
 export const PAGE_SIZE = 20;
 
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+
+/** Raster types we re-encode to AVIF on upload to shrink storage and downloads. */
+export const ATTACHMENT_IMAGE_CONVERT_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
+
 export const ATTACHMENT_ALLOWED_TYPES: Record<string, string> = {
   "application/pdf": ".pdf",
+  "image/avif": ".avif",
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/gif": ".gif",
@@ -92,3 +102,6 @@ export const ATTACHMENT_ALLOWED_TYPES: Record<string, string> = {
   "application/vnd.ms-powerpoint": ".ppt",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
 };
+
+export const ATTACHMENT_ACCEPT =
+  ".pdf,.avif,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.md,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx";

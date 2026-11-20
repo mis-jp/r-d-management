@@ -37,15 +37,35 @@ async function assertOtherActiveAdmin(tx: TxClient, userId: string) {
   if (others === 0) throw invalid("You cannot remove the last active admin account.");
 }
 
+async function withDbRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      const msg = error instanceof Error ? error.message : String(error);
+      const retryable = /Can't reach database server|P1001|ETIMEDOUT|ECONNRESET|ECONNREFUSED/i.test(msg);
+      if (!retryable || i === attempts - 1) throw error;
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export async function authenticate(email: string, password: string) {
-  const user = await db.user.findUnique({
-    where: { email },
-    select: { id: true, passwordHash: true, isActive: true, sessionVersion: true },
-  });
+  const user = await withDbRetry(() =>
+    db.user.findUnique({
+      where: { email },
+      select: { id: true, passwordHash: true, isActive: true, sessionVersion: true },
+    }),
+  );
   const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !valid) return { ok: false as const, reason: "invalid" as const };
   if (!user.isActive) return { ok: false as const, reason: "inactive" as const };
-  await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await withDbRetry(() =>
+    db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+  );
   return { ok: true as const, userId: user.id, sessionVersion: user.sessionVersion };
 }
 

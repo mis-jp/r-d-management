@@ -7,7 +7,6 @@ import type { NotificationType, Role } from "@prisma/client";
 import {
   Bell,
   CheckCheck,
-  FlaskConical,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -24,6 +23,7 @@ import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
 } from "@/server/actions/notification-actions";
+import { BrandLogo } from "@/components/brand/logo";
 import { Avatar } from "@/components/ui/misc";
 import {
   DropdownMenu,
@@ -162,15 +162,11 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className={cn("flex h-14 items-center gap-2.5 border-b px-4", collapsed && "justify-center px-0")}>
-        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-white">
-          <FlaskConical className="size-4" aria-hidden />
-        </span>
-        {!collapsed && (
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-slate-900">R&amp;D Tasks</p>
-            <p className="text-[11px] text-slate-500">Research &amp; Development</p>
-          </div>
+      <div className={cn("flex h-14 items-center gap-2.5 border-b px-3", collapsed && "justify-center px-0")}>
+        {collapsed ? (
+          <BrandLogo mark className="size-8" />
+        ) : (
+          <BrandLogo className="h-9 w-auto max-w-[11.5rem]" />
         )}
       </div>
       <nav className="flex-1 space-y-6 overflow-y-auto p-2 py-4 scrollbar-thin">

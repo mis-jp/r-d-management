@@ -41,29 +41,34 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const payload = await verifySession(store.get(SESSION_COOKIE)?.value);
   if (!payload) return null;
 
-  const user = await db.user.findUnique({
-    where: { id: payload.sub },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      jobTitle: true,
-      avatarColor: true,
-      sessionVersion: true,
-    },
-  });
-  if (!user || !user.isActive || user.sessionVersion !== payload.ver) return null;
+  try {
+    const user = await db.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        jobTitle: true,
+        avatarColor: true,
+        sessionVersion: true,
+      },
+    });
+    if (!user || !user.isActive || user.sessionVersion !== payload.ver) return null;
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    jobTitle: user.jobTitle,
-    avatarColor: user.avatarColor,
-  };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      jobTitle: user.jobTitle,
+      avatarColor: user.avatarColor,
+    };
+  } catch {
+    // Database briefly offline — treat as signed out so public pages still render.
+    return null;
+  }
 });
 
 /** For pages and layouts: redirects to login when there is no valid session. */

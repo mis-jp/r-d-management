@@ -211,6 +211,7 @@ export default async function TaskDetailPage({ params }: Params) {
             attachments={task.attachments.map((a) => ({
               id: a.id,
               fileName: a.fileName,
+              mimeType: a.mimeType,
               sizeBytes: a.sizeBytes,
               uploadedBy: a.uploadedBy,
               createdAt: a.createdAt.toISOString(),

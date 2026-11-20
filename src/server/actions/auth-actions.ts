@@ -17,18 +17,35 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return fromZodError(parsed.error);
 
+  // Login rate limiting is off during development/setup.
+  // Re-enable LOGIN_RATE_LIMIT when the app is ready for production use.
+  const LOGIN_RATE_LIMIT = false;
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   const key = `login:${ip}:${parsed.data.email}`;
-  const limit = checkRateLimit(key, 5, 15 * 60 * 1000);
-  if (!limit.allowed) {
-    const minutes = Math.ceil(limit.retryAfterMs / 60000);
-    return { ok: false, error: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.` };
+  if (LOGIN_RATE_LIMIT) {
+    const limit = checkRateLimit(key, 5, 15 * 60 * 1000);
+    if (!limit.allowed) {
+      const minutes = Math.ceil(limit.retryAfterMs / 60000);
+      return {
+        ok: false,
+        error: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+      };
+    }
+  } else {
+    resetRateLimit(key);
   }
 
   let result: Awaited<ReturnType<typeof authenticate>>;
   try {
     result = await authenticate(parsed.data.email, parsed.data.password);
   } catch (error) {
+    const msg = error instanceof Error ? error.message : "";
+    if (/Can't reach database server|P1001|ECONNREFUSED|ETIMEDOUT/i.test(msg)) {
+      return {
+        ok: false,
+        error: "Cannot reach the database. Check that MySQL is running and DATABASE_URL is correct.",
+      };
+    }
     return toActionError(error);
   }
   if (!result.ok) {
@@ -41,7 +58,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     };
   }
 
-  resetRateLimit(key);
+  if (LOGIN_RATE_LIMIT) resetRateLimit(key);
   await createSession(result.userId, result.sessionVersion);
   redirect(safeNext(formData.get("next")));
 }

@@ -45,5 +45,5 @@ export function titleForPath(pathname: string): string {
   const all = [...COMMON_NAV, ...ADMIN_NAV].sort((a, b) => b.href.length - a.href.length);
   if (pathname.startsWith("/tasks/")) return "Task Details";
   if (pathname.startsWith("/employees/")) return "Employee Profile";
-  return all.find((n) => pathname === n.href || pathname.startsWith(`${n.href}/`))?.label ?? "R&D Tasks";
+  return all.find((n) => pathname === n.href || pathname.startsWith(`${n.href}/`))?.label ?? "R&D Management";
 }

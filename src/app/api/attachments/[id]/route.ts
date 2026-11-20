@@ -3,7 +3,14 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { readUpload } from "@/server/services/attachment-storage";
 import { getAttachmentForViewer } from "@/server/services/task-service";
 
-const INLINE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
+const INLINE_TYPES = new Set([
+  "image/avif",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+]);
 
 export async function GET(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();

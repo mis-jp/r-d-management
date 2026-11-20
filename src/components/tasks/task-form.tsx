@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Priority, TaskStatus } from "@prisma/client";
 import { Hand, UserRound } from "lucide-react";
-import { ATTACHMENT_MAX_BYTES, PRIORITIES, PRIORITY_LABELS, STATUS_LABELS, TASK_STATUSES } from "@/lib/constants";
+import {
+  ATTACHMENT_ACCEPT,
+  ATTACHMENT_MAX_BYTES,
+  PRIORITIES,
+  PRIORITY_LABELS,
+  STATUS_LABELS,
+  TASK_STATUSES,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { createTaskAction, updateTaskAction } from "@/server/actions/task-actions";
 import { Button } from "@/components/ui/button";
@@ -12,6 +19,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, FormAlert, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { fieldError, useActionToast } from "@/components/shared/use-action-toast";
 import { useFormAction } from "@/components/shared/use-form-action";
+import { MultiFileInput } from "./multi-file-input";
 
 type Employee = { id: string; name: string; jobTitle: string | null };
 type Tag = { id: string; name: string; color: string | null };
@@ -279,19 +287,12 @@ export function TaskForm({ mode, employees, tags, initial }: Props) {
 
         {mode === "create" && (
           <Card>
-            <CardHeader title="Attachments" description={`Optional. Up to ${ATTACHMENT_MAX_BYTES / 1024 / 1024} MB each.`} />
+            <CardHeader
+              title="Attachments"
+              description={`Optional. Choose multiple files — up to ${ATTACHMENT_MAX_BYTES / 1024 / 1024} MB each. Photos are stored as AVIF.`}
+            />
             <CardBody>
-              <label htmlFor="attachments" className="sr-only">
-                Attachments
-              </label>
-              <input
-                id="attachments"
-                name="attachments"
-                type="file"
-                multiple
-                accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.md,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-slate-200"
-              />
+              <MultiFileInput name="attachments" accept={ATTACHMENT_ACCEPT} maxBytes={ATTACHMENT_MAX_BYTES} />
             </CardBody>
           </Card>
         )}

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Field, FormAlert, Input, Select, Textarea } from "@/components/ui/form-controls";
+import { PasswordInput } from "@/components/ui/password-input";
 import { fieldError, useActionToast } from "@/components/shared/use-action-toast";
 import { useFormAction } from "@/components/shared/use-form-action";
 
@@ -117,10 +118,10 @@ export function CreateUserForm() {
               </Select>
             </Field>
             <Field label="Temporary password" htmlFor="password" required error={err("password")} hint="At least 10 characters with a letter and a number.">
-              <Input id="password" name="password" type="password" autoComplete="new-password" aria-invalid={!!err("password")} />
+              <PasswordInput id="password" name="password" autoComplete="new-password" aria-invalid={!!err("password")} />
             </Field>
             <Field label="Confirm password" htmlFor="confirmPassword" required error={err("confirmPassword")}>
-              <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" />
+              <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" />
             </Field>
           </CardBody>
         </Card>
@@ -260,10 +261,10 @@ export function AccountControls({
           <form onSubmit={reset.onSubmit} noValidate className="space-y-3">
             <input type="hidden" name="userId" value={user.id} />
             <Field label="New password" htmlFor="reset-password" error={fieldError(reset.state, "password")} hint="At least 10 characters with a letter and a number.">
-              <Input id="reset-password" name="password" type="password" autoComplete="new-password" />
+              <PasswordInput id="reset-password" name="password" autoComplete="new-password" />
             </Field>
             <Field label="Confirm password" htmlFor="reset-confirm" error={fieldError(reset.state, "confirmPassword")}>
-              <Input id="reset-confirm" name="confirmPassword" type="password" autoComplete="new-password" />
+              <PasswordInput id="reset-confirm" name="confirmPassword" autoComplete="new-password" />
             </Field>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>

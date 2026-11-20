@@ -4,8 +4,9 @@ import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "R&D Task Management", template: "%s · R&D Tasks" },
+  title: { default: "R&D Management", template: "%s · R&D Management" },
   description: "Task management for the Research & Development department.",
+  icons: { icon: "/brand/rd-management-mark.webp" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
