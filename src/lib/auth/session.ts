@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, signSession, verifySession } from "./token";
+import { SESSION_COOKIE, sessionCookieOptions, signSession, verifySession } from "./token";
 
 export type SessionUser = {
   id: string;
@@ -18,13 +18,7 @@ export type SessionUser = {
 export async function createSession(userId: string, sessionVersion: number) {
   const token = await signSession({ sub: userId, ver: sessionVersion });
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
-  });
+  store.set(SESSION_COOKIE, token, sessionCookieOptions());
 }
 
 export async function destroySession() {

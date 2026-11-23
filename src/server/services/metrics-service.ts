@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 import type { DateRange } from "@/lib/date-range";
 import {
   averageCompletionDays,
@@ -31,15 +32,19 @@ const metricSelect = {
 
 /** Archived tasks are excluded from every metric. */
 function loadMetricTasks(where: Prisma.TaskWhereInput = {}): Promise<MetricTask[]> {
-  return db.task.findMany({ where: { ...where, isArchived: false }, select: metricSelect });
+  return withDbRetry(() =>
+    db.task.findMany({ where: { ...where, isArchived: false }, select: metricSelect }),
+  );
 }
 
 function loadEmployees() {
-  return db.user.findMany({
-    where: { role: "EMPLOYEE", isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, avatarColor: true, jobTitle: true },
-  });
+  return withDbRetry(() =>
+    db.user.findMany({
+      where: { role: "EMPLOYEE", isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, avatarColor: true, jobTitle: true },
+    }),
+  );
 }
 
 const recentActivitySelect = {
@@ -55,24 +60,37 @@ const recentActivitySelect = {
 
 export async function getAdminDashboard(range: DateRange) {
   const now = new Date();
-  const [tasks, employees, open, overdue, recentTasks, recentActivity, awaitingReview] = await Promise.all([
-    loadMetricTasks(),
-    loadEmployees(),
-    db.task.count({ where: openTaskWhere() }),
-    db.task.count({ where: overdueWhere(now) }),
-    db.task.findMany({ where: { isArchived: false }, orderBy: { updatedAt: "desc" }, take: 6, select: taskListSelect }),
-    db.activityLog.findMany({
-      where: { taskId: { not: null } },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: recentActivitySelect,
-    }),
-    db.task.findMany({
-      where: { isArchived: false, status: "IN_REVIEW" },
-      orderBy: { updatedAt: "asc" },
-      take: 5,
-      select: taskListSelect,
-    }),
+  // Sequential batches + retries: remote MySQL often drops under a large Promise.all burst.
+  const [tasks, employees] = await Promise.all([loadMetricTasks(), loadEmployees()]);
+  const [open, overdue] = await Promise.all([
+    withDbRetry(() => db.task.count({ where: openTaskWhere() })),
+    withDbRetry(() => db.task.count({ where: overdueWhere(now) })),
+  ]);
+  const [recentTasks, recentActivity, awaitingReview] = await Promise.all([
+    withDbRetry(() =>
+      db.task.findMany({
+        where: { isArchived: false },
+        orderBy: { updatedAt: "desc" },
+        take: 6,
+        select: taskListSelect,
+      }),
+    ),
+    withDbRetry(() =>
+      db.activityLog.findMany({
+        where: { taskId: { not: null } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: recentActivitySelect,
+      }),
+    ),
+    withDbRetry(() =>
+      db.task.findMany({
+        where: { isArchived: false, status: "IN_REVIEW" },
+        orderBy: { updatedAt: "asc" },
+        take: 5,
+        select: taskListSelect,
+      }),
+    ),
   ]);
 
   const rate = completionRate(tasks, range);
@@ -99,27 +117,35 @@ export async function getAdminDashboard(range: DateRange) {
 
 export async function getEmployeeDashboard(userId: string, range: DateRange) {
   const now = new Date();
-  const [tasks, dueSoon, overdueTasks, recentActivity, openCount] = await Promise.all([
-    loadMetricTasks({ assigneeId: userId }),
-    db.task.findMany({
-      where: { ...dueSoonWhere(7, now), assigneeId: userId },
-      orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
-      take: 6,
-      select: taskListSelect,
-    }),
-    db.task.findMany({
-      where: { ...overdueWhere(now), assigneeId: userId },
-      orderBy: { dueDate: "asc" },
-      take: 6,
-      select: taskListSelect,
-    }),
-    db.activityLog.findMany({
-      where: { task: { assigneeId: userId, isArchived: false } },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      select: recentActivitySelect,
-    }),
-    db.task.count({ where: openTaskWhere() }),
+  const tasks = await loadMetricTasks({ assigneeId: userId });
+  const [dueSoon, overdueTasks] = await Promise.all([
+    withDbRetry(() =>
+      db.task.findMany({
+        where: { ...dueSoonWhere(7, now), assigneeId: userId },
+        orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
+        take: 6,
+        select: taskListSelect,
+      }),
+    ),
+    withDbRetry(() =>
+      db.task.findMany({
+        where: { ...overdueWhere(now), assigneeId: userId },
+        orderBy: { dueDate: "asc" },
+        take: 6,
+        select: taskListSelect,
+      }),
+    ),
+  ]);
+  const [recentActivity, openCount] = await Promise.all([
+    withDbRetry(() =>
+      db.activityLog.findMany({
+        where: { task: { assigneeId: userId, isArchived: false } },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        select: recentActivitySelect,
+      }),
+    ),
+    withDbRetry(() => db.task.count({ where: openTaskWhere() })),
   ]);
 
   const rate = completionRate(tasks, range);
@@ -148,11 +174,8 @@ export async function getEmployeeDashboard(userId: string, range: DateRange) {
 }
 
 export async function getTeamWorkload(range: DateRange) {
-  const [tasks, employees, openTasks] = await Promise.all([
-    loadMetricTasks(),
-    loadEmployees(),
-    db.task.count({ where: openTaskWhere() }),
-  ]);
+  const [tasks, employees] = await Promise.all([loadMetricTasks(), loadEmployees()]);
+  const openTasks = await withDbRetry(() => db.task.count({ where: openTaskWhere() }));
   const rows = employeeWorkload(employees, tasks, range);
   const totalActive = rows.reduce((s, r) => s + r.active, 0);
   return {

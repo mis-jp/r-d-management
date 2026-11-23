@@ -1,13 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySession } from "@/lib/auth/token";
+import {
+  SESSION_COOKIE,
+  sessionCookieOptions,
+  sessionNeedsRefresh,
+  signSession,
+  verifySession,
+} from "@/lib/auth/token";
 
 /**
  * Optimistic gate only: sends visitors without a valid signed session to /login.
  * Every page, Server Action and Route Handler still re-checks the user against the database.
+ * Also slides the session cookie forward so users stay signed in until they log out.
  */
 export async function proxy(request: NextRequest) {
-  const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
-  if (session) return NextResponse.next();
+  const current = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = await verifySession(current);
+  if (session) {
+    const response = NextResponse.next();
+    if (sessionNeedsRefresh(session)) {
+      const token = await signSession({ sub: session.sub, ver: session.ver });
+      response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+    }
+    return response;
+  }
 
   if (request.nextUrl.pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

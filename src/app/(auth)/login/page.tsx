@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -8,107 +7,85 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-const HIGHLIGHTS = [
-  "Assign tasks or publish them as OPEN for the team to claim",
-  "Track status, progress, and deadlines in one place",
-  "Upload accomplishment photos — stored as AVIF to stay fast",
-  "See workload and completion trends across the department",
-];
-
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   if (await getCurrentUser()) redirect("/dashboard");
   const { next } = await searchParams;
   const showDemo = process.env.NODE_ENV !== "production";
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-2">
-      {/* Brand panel — full-bleed indigo, logo floats without a black header bar */}
-      <aside className="relative hidden overflow-hidden bg-brand-900 text-white lg:flex lg:flex-col">
+    <div className="login-page relative min-h-dvh overflow-hidden bg-[#07101f]">
+      {/* Full-bleed atmosphere */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_10%_-10%,rgba(99,102,241,0.55),transparent_55%),radial-gradient(ellipse_70%_50%_at_90%_110%,rgba(14,165,233,0.28),transparent_50%),radial-gradient(circle_at_50%_40%,rgba(15,23,42,0.2),transparent_70%)]" />
         <div
-          className="pointer-events-none absolute inset-0"
+          className="absolute inset-0 opacity-[0.14]"
           style={{
-            background:
-              "radial-gradient(ellipse 90% 55% at 15% 0%, rgba(99,102,241,0.55), transparent 55%), radial-gradient(ellipse 70% 45% at 100% 100%, rgba(14,165,233,0.28), transparent 50%)",
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent)",
           }}
-          aria-hidden
         />
+        <div className="login-orb login-orb-a absolute -left-24 top-16 size-72 rounded-full bg-indigo-500/30 blur-3xl" />
+        <div className="login-orb login-orb-b absolute -right-16 bottom-10 size-80 rounded-full bg-sky-400/20 blur-3xl" />
+      </div>
 
-        <div className="relative flex flex-1 flex-col justify-between p-10 xl:p-12">
-          <div>
-            <BrandLogo className="h-16 w-auto max-w-[18rem]" priority />
-            <p className="sr-only">R&amp;D Management</p>
-          </div>
+      <ThemeToggle className="absolute right-4 top-4 z-20 text-white/80 hover:text-white sm:right-6 sm:top-6" />
 
-          <div className="max-w-lg py-10">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-indigo-200">R&amp;D Management</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
-              Plan, claim, and ship research work — together.
-            </h2>
-            <ul className="mt-8 space-y-3.5 text-sm leading-relaxed text-indigo-100">
-              {HIGHLIGHTS.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-indigo-300" aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col justify-center gap-10 px-5 py-12 sm:px-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:px-10">
+        {/* Brand hero */}
+        <section className="login-fade-up text-white">
+          <BrandLogo className="h-14 w-auto max-w-[16rem] sm:h-16 sm:max-w-[18rem]" priority />
+          <p className="sr-only">R&amp;D Management</p>
 
-          <p className="text-xs text-indigo-300">Internal use only · Research &amp; Development Department</p>
-        </div>
-      </aside>
+          <h1 className="mt-8 max-w-xl font-display text-4xl leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.35rem]">
+            R&amp;D Management
+          </h1>
+          <p className="mt-4 max-w-md text-base leading-relaxed text-indigo-100/90 sm:text-lg">
+            Plan research work, claim open tasks, and ship progress — in one calm workspace for the department.
+          </p>
 
-      {/* Sign-in panel */}
-      <main className="relative flex items-center justify-center bg-canvas px-6 py-12">
-        <ThemeToggle className="absolute right-4 top-4 sm:right-6 sm:top-6" />
+          <p className="mt-10 text-xs text-indigo-200/70">Internal use · Research &amp; Development Department</p>
+        </section>
 
-        <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <BrandLogo className="h-12 w-auto max-w-[14rem]" priority />
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-              Use your R&amp;D department email and password. Admins and employees share this page.
-            </p>
-          </div>
-
-          <LoginForm next={next} />
-
-          {showDemo && (
-            <section
-              aria-label="Demo accounts"
-              className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-4"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Local demo accounts</p>
-              <ul className="mt-3 space-y-2.5 text-sm">
-                <li className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500">Admin</p>
-                  <code className="block break-all rounded-md border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-slate-900">
-                    admin@rnd.local
-                  </code>
-                </li>
-                <li className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500">Employee</p>
-                  <code className="block break-all rounded-md border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-slate-900">
-                    maria.santos@rnd.local
-                  </code>
-                </li>
-                <li className="space-y-1 border-t border-brand-200/80 pt-2.5">
-                  <p className="text-xs font-medium text-slate-500">Password (both)</p>
-                  <code className="block break-all rounded-md border bg-surface px-2.5 py-1.5 text-[13px] font-medium text-slate-900">
-                    Password123!
-                  </code>
-                </li>
-              </ul>
-              <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                Demo accounts are for local testing. Your department admin account also works on this page.
+        {/* Sign-in panel */}
+        <main className="login-fade-up login-fade-up-delay w-full">
+          <div className="rounded-[1.75rem] border border-white/10 bg-[color-mix(in_oklab,var(--color-surface)_92%,transparent)] p-6 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:p-8">
+            <div className="mb-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Welcome back</p>
+              <h2 className="mt-2 font-display text-3xl tracking-tight text-slate-900">Sign in</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                Use your department email and password. Admins and employees share this page.
               </p>
-            </section>
-          )}
-        </div>
-      </main>
+            </div>
+
+            <LoginForm next={next} />
+
+            {showDemo && (
+              <section aria-label="Demo accounts" className="mt-7 border-t border-border pt-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Local demo</p>
+                <div className="mt-3 grid gap-2 text-[13px]">
+                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
+                    <span className="font-medium text-slate-900">Admin</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <code>admin@rnd.local</code>
+                  </p>
+                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
+                    <span className="font-medium text-slate-900">Employee</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <code>maria.santos@rnd.local</code>
+                  </p>
+                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
+                    <span className="font-medium text-slate-900">Password</span>
+                    <span className="mx-2 text-slate-400">·</span>
+                    <code>Password123!</code>
+                  </p>
+                </div>
+              </section>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { db, type TxClient } from "@/lib/db";
 import type { SessionUser } from "@/lib/auth/session";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { AVATAR_COLORS } from "@/lib/constants";
+import { withDbRetry } from "@/lib/db-retry";
 import { conflict, forbidden, invalid, notFound } from "@/lib/errors";
 import type {
   adminUpdateUserSchema,
@@ -35,22 +36,6 @@ async function ensureEmailAvailable(tx: TxClient, email: string, exceptUserId?: 
 async function assertOtherActiveAdmin(tx: TxClient, userId: string) {
   const others = await tx.user.count({ where: { role: "ADMIN", isActive: true, id: { not: userId } } });
   if (others === 0) throw invalid("You cannot remove the last active admin account.");
-}
-
-async function withDbRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
-  let lastError: unknown;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-      const msg = error instanceof Error ? error.message : String(error);
-      const retryable = /Can't reach database server|P1001|ETIMEDOUT|ECONNRESET|ECONNREFUSED/i.test(msg);
-      if (!retryable || i === attempts - 1) throw error;
-      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
-    }
-  }
-  throw lastError;
 }
 
 export async function authenticate(email: string, password: string) {
