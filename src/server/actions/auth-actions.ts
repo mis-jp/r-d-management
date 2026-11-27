@@ -14,15 +14,17 @@ function safeNext(value: FormDataEntryValue | null): string {
 }
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
+  const identifier = formData.get("identifier") ?? formData.get("email");
+  const parsed = loginSchema.safeParse({ identifier, password: formData.get("password") });
   if (!parsed.success) return fromZodError(parsed.error);
 
-  // Login rate limiting is off during development/setup.
-  // Re-enable LOGIN_RATE_LIMIT when the app is ready for production use.
-  const LOGIN_RATE_LIMIT = false;
+  // On by default in production. Set LOGIN_RATE_LIMIT=0 to disable (local QA only).
+  const rateLimitEnabled = process.env.LOGIN_RATE_LIMIT
+    ? !["0", "false", "off"].includes(process.env.LOGIN_RATE_LIMIT.trim().toLowerCase())
+    : process.env.NODE_ENV === "production";
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  const key = `login:${ip}:${parsed.data.email}`;
-  if (LOGIN_RATE_LIMIT) {
+  const key = `login:${ip}:${parsed.data.identifier.toLowerCase()}`;
+  if (rateLimitEnabled) {
     const limit = checkRateLimit(key, 5, 15 * 60 * 1000);
     if (!limit.allowed) {
       const minutes = Math.ceil(limit.retryAfterMs / 60000);
@@ -31,13 +33,11 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
         error: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
       };
     }
-  } else {
-    resetRateLimit(key);
   }
 
   let result: Awaited<ReturnType<typeof authenticate>>;
   try {
-    result = await authenticate(parsed.data.email, parsed.data.password);
+    result = await authenticate(parsed.data.identifier, parsed.data.password);
   } catch (error) {
     return loginFailure(error);
   }
@@ -47,11 +47,11 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
       error:
         result.reason === "inactive"
           ? "This account has been deactivated. Contact your R&D administrator."
-          : "Incorrect email or password.",
+          : "Incorrect employee ID / email or password.",
     };
   }
 
-  if (LOGIN_RATE_LIMIT) resetRateLimit(key);
+  if (rateLimitEnabled) resetRateLimit(key);
   try {
     await createSession(result.userId, result.sessionVersion);
   } catch (error) {
@@ -81,7 +81,7 @@ function loginFailure(error: unknown): FormState {
   ) {
     return {
       ok: false,
-      error: "Cannot reach the database from production. Confirm DATABASE_URL and that MySQL allows this host.",
+      error: "Cannot reach the database right now. Confirm DATABASE_URL (Neon pooler) and try again in a moment.",
     };
   }
   if (/Access denied for user|P1000|authentication failed/i.test(msg)) {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Briefcase, Building2, Mail, Phone } from "lucide-react";
+import { Briefcase, Building2, IdCard, Mail, Phone } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { CLOSED_STATUSES, ROLE_LABELS, STATUS_COLORS, STATUS_LABELS } from "@/lib/constants";
@@ -68,6 +68,10 @@ export default async function EmployeeDetailPage({
             </div>
             <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
               <li className="flex items-center gap-1.5">
+                <IdCard className="size-3.5" aria-hidden />
+                <span className="font-mono text-slate-700">{user.employeeId ?? "No employee ID"}</span>
+              </li>
+              <li className="flex items-center gap-1.5">
                 <Mail className="size-3.5" aria-hidden /> {user.email}
               </li>
               {user.jobTitle && (
@@ -133,6 +137,7 @@ export default async function EmployeeDetailPage({
               id: user.id,
               name: user.name,
               email: user.email,
+              employeeId: user.employeeId,
               role: user.role,
               jobTitle: user.jobTitle,
               department: user.department,

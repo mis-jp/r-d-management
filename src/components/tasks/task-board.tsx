@@ -84,13 +84,13 @@ function BoardCard({ task, viewer }: { task: TaskListItem; viewer: SessionUser }
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] text-slate-400">{task.taskKey}</span>
+        <span className="font-mono text-[11px] font-medium tracking-wide text-slate-500">{task.taskKey}</span>
         <PriorityBadge priority={task.priority} className="shrink-0" />
       </div>
 
       <Link
         href={`/tasks/${task.taskKey}`}
-        className="mt-1.5 block text-sm font-medium leading-snug text-slate-900 hover:text-brand-700"
+        className="mt-2 block text-sm font-semibold leading-snug text-slate-900 hover:text-brand-700"
       >
         <span className="line-clamp-2">{task.title}</span>
       </Link>

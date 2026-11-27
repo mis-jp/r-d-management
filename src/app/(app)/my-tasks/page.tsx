@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Columns3, Hand, LayoutList, ListTodo, SearchX } from "lucide-react";
 import { requireUser } from "@/lib/auth/session";
 import { firstParam } from "@/lib/utils";
@@ -20,6 +21,12 @@ type SP = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function MyTasksPage({ searchParams }: { searchParams: SP }) {
   const user = await requireUser();
+
+  // My Tasks is the employee personal queue. Admins assign work — send them to All Tasks.
+  if (user.role === "ADMIN") {
+    redirect("/tasks");
+  }
+
   const params = await searchParams;
   const filters = parseTaskFilters(params);
   const view = firstParam(params.view) === "board" ? "board" : "list";
@@ -37,7 +44,11 @@ export default async function MyTasksPage({ searchParams }: { searchParams: SP }
     <EmptyState
       icon={hasFilters ? <SearchX /> : <ListTodo />}
       title={hasFilters ? "No tasks match these filters." : "No tasks assigned to you yet."}
-      description={hasFilters ? "Try clearing a filter or searching for something else." : "Browse OPEN tasks to pick up new work."}
+      description={
+        hasFilters
+          ? "Try clearing a filter or searching for something else."
+          : "When a manager assigns you work — or you claim an OPEN task — it will show up here."
+      }
       action={
         hasFilters ? (
           <Button asChild variant="outline">
@@ -46,7 +57,7 @@ export default async function MyTasksPage({ searchParams }: { searchParams: SP }
         ) : (
           <Button asChild>
             <Link href="/open-tasks">
-              <Hand /> Browse OPEN tasks
+              <Hand /> Browse Open Tasks
             </Link>
           </Button>
         )
@@ -58,7 +69,7 @@ export default async function MyTasksPage({ searchParams }: { searchParams: SP }
     <>
       <PageHeader
         title="My Tasks"
-        description="Tasks assigned to you or claimed by you."
+        description="Your personal queue — tasks assigned to you or claimed by you."
         actions={
           <>
             {view === "board" && (

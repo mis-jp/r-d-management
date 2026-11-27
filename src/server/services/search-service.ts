@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 import type { SessionUser } from "@/lib/auth/session";
 import { openTaskWhere } from "@/server/repositories/task-repository";
 
@@ -23,32 +24,33 @@ export async function quickSearch(viewer: SessionUser, rawQuery: string) {
     ? { isArchived: false }
     : { OR: [{ assigneeId: viewer.id, isArchived: false }, openTaskWhere()] };
 
-  const [tasks, people] = await Promise.all([
-    db.task.findMany({
-      where: { AND: [visibility, { OR: match }] },
-      orderBy: [{ updatedAt: "desc" }],
-      take: TASK_LIMIT,
-      select: {
-        id: true,
-        taskKey: true,
-        title: true,
-        status: true,
-        assignee: { select: { name: true } },
-      },
-    }),
-    isAdmin
-      ? db.user.findMany({
-          where: {
-            OR: [{ name: { contains: q } }, { email: { contains: q } }, { jobTitle: { contains: q } }],
-          },
-          orderBy: [{ isActive: "desc" }, { name: "asc" }],
-          take: PEOPLE_LIMIT,
-          select: { id: true, name: true, email: true, jobTitle: true, avatarColor: true, isActive: true },
-        })
-      : Promise.resolve([]),
-  ]);
-
-  return { tasks, people };
+  return withDbRetry(async () => {
+    const [tasks, people] = await Promise.all([
+      db.task.findMany({
+        where: { AND: [visibility, { OR: match }] },
+        orderBy: [{ updatedAt: "desc" }],
+        take: TASK_LIMIT,
+        select: {
+          id: true,
+          taskKey: true,
+          title: true,
+          status: true,
+          assignee: { select: { name: true } },
+        },
+      }),
+      isAdmin
+        ? db.user.findMany({
+            where: {
+              OR: [{ name: { contains: q } }, { email: { contains: q } }, { jobTitle: { contains: q } }],
+            },
+            orderBy: [{ isActive: "desc" }, { name: "asc" }],
+            take: PEOPLE_LIMIT,
+            select: { id: true, name: true, email: true, jobTitle: true, avatarColor: true, isActive: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    return { tasks, people };
+  });
 }
 
 export type QuickSearchResult = Awaited<ReturnType<typeof quickSearch>>;

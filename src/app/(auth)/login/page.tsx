@@ -10,7 +10,6 @@ export const metadata: Metadata = { title: "Sign in" };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   if (await getCurrentUser()) redirect("/dashboard");
   const { next } = await searchParams;
-  const showDemo = process.env.NODE_ENV !== "production";
 
   return (
     <div className="login-page relative min-h-dvh overflow-hidden bg-[#07101f]">
@@ -55,34 +54,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Welcome back</p>
               <h2 className="mt-2 font-display text-3xl tracking-tight text-slate-900">Sign in</h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                Use your department email and password. Admins and employees share this page.
+                Sign in with your employee ID or Gmail, plus your Kelin Connect password.
               </p>
             </div>
 
             <LoginForm next={next} />
-
-            {showDemo && (
-              <section aria-label="Demo accounts" className="mt-7 border-t border-border pt-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Local demo</p>
-                <div className="mt-3 grid gap-2 text-[13px]">
-                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
-                    <span className="font-medium text-slate-900">Admin</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <code>admin@rnd.local</code>
-                  </p>
-                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
-                    <span className="font-medium text-slate-900">Employee</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <code>maria.santos@rnd.local</code>
-                  </p>
-                  <p className="rounded-lg bg-slate-100 px-3 py-2 text-slate-700">
-                    <span className="font-medium text-slate-900">Password</span>
-                    <span className="mx-2 text-slate-400">·</span>
-                    <code>Password123!</code>
-                  </p>
-                </div>
-              </section>
-            )}
           </div>
         </main>
       </div>

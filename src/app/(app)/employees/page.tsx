@@ -79,6 +79,7 @@ export default async function EmployeesPage({
               <thead>
                 <tr className="border-b bg-slate-50/60 text-left text-xs uppercase tracking-wide text-slate-500">
                   <th scope="col" className="px-5 py-2.5 font-medium">Name</th>
+                  <th scope="col" className="px-3 py-2.5 font-medium">Employee ID</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Role</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Status</th>
                   <th scope="col" className="px-3 py-2.5 text-right font-medium">Active</th>
@@ -103,6 +104,9 @@ export default async function EmployeesPage({
                             </span>
                           </span>
                         </Link>
+                      </td>
+                      <td className="px-3 py-3 font-mono text-xs tabular-nums text-slate-700">
+                        {u.employeeId ?? "—"}
                       </td>
                       <td className="px-3 py-3">
                         <Badge className={u.role === "ADMIN" ? "border-brand-200 bg-brand-50 text-brand-700" : "border-slate-200 bg-surface text-slate-600"}>

@@ -17,7 +17,11 @@ export function BrandLogo({ className, mark = false, priority = false }: Props) 
   const base = mark ? "/brand/rd-management-mark-transparent" : "/brand/rd-management-logo-transparent";
   const size = mark
     ? { width: 40, height: 40, className: cn("size-8 object-contain", className) }
-    : { width: 320, height: 180, className: cn("h-9 w-auto max-w-full object-contain", className) };
+    : {
+        width: 320,
+        height: 180,
+        className: cn("h-9 w-auto max-w-full object-contain object-left", className),
+      };
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- static brand asset

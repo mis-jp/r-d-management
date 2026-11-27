@@ -32,16 +32,34 @@ async function ensureEmailAvailable(tx: TxClient, email: string, exceptUserId?: 
   if (existing && existing.id !== exceptUserId) throw conflict("Another account already uses that email address.");
 }
 
+function normalizeEmployeeId(employeeId: string | undefined): string | undefined {
+  if (!employeeId) return undefined;
+  return employeeId.trim().toUpperCase();
+}
+
+async function ensureEmployeeIdAvailable(tx: TxClient, employeeId: string | undefined, exceptUserId?: string) {
+  if (!employeeId) return;
+  const existing = await tx.user.findUnique({ where: { employeeId }, select: { id: true } });
+  if (existing && existing.id !== exceptUserId) {
+    throw conflict("Another account already uses that employee ID.");
+  }
+}
+
 /** Guards against leaving the department without any active admin. */
 async function assertOtherActiveAdmin(tx: TxClient, userId: string) {
   const others = await tx.user.count({ where: { role: "ADMIN", isActive: true, id: { not: userId } } });
   if (others === 0) throw invalid("You cannot remove the last active admin account.");
 }
 
-export async function authenticate(email: string, password: string) {
+/** Sign in with email or employee ID (Flutter / Kelin Connect style). */
+export async function authenticate(identifier: string, password: string) {
+  const raw = identifier.trim();
+  const byEmail = raw.includes("@");
   const user = await withDbRetry(() =>
     db.user.findUnique({
-      where: { email },
+      where: byEmail
+        ? { email: raw.toLowerCase() }
+        : { employeeId: raw.toUpperCase() },
       select: { id: true, passwordHash: true, isActive: true, sessionVersion: true },
     }),
   );
@@ -58,11 +76,14 @@ export async function createUser(actor: SessionUser, input: z.infer<typeof creat
   requireAdmin(actor);
   const passwordHash = await hashPassword(input.password);
   return db.$transaction(async (tx) => {
+    const employeeId = normalizeEmployeeId(input.employeeId);
     await ensureEmailAvailable(tx, input.email);
+    await ensureEmployeeIdAvailable(tx, employeeId);
     const user = await tx.user.create({
       data: {
         name: input.name,
         email: input.email,
+        employeeId: employeeId ?? null,
         role: input.role,
         passwordHash,
         jobTitle: input.jobTitle ?? null,
@@ -88,7 +109,9 @@ export async function adminUpdateUser(actor: SessionUser, input: z.infer<typeof 
   return db.$transaction(async (tx) => {
     const user = await tx.user.findUnique({ where: { id: input.userId }, select: { id: true, role: true, email: true } });
     if (!user) throw notFound("User not found.");
+    const employeeId = normalizeEmployeeId(input.employeeId);
     await ensureEmailAvailable(tx, input.email, user.id);
+    await ensureEmployeeIdAvailable(tx, employeeId, user.id);
 
     if (user.role !== input.role) {
       if (user.id === actor.id) throw invalid("You cannot change your own role.");
@@ -101,6 +124,7 @@ export async function adminUpdateUser(actor: SessionUser, input: z.infer<typeof 
       data: {
         name: input.name,
         email: input.email,
+        employeeId: employeeId ?? null,
         role: input.role,
         jobTitle: input.jobTitle ?? null,
         department: input.department ?? null,
@@ -177,11 +201,14 @@ export async function updateOwnProfile(actor: SessionUser, input: z.infer<typeof
   }
   await db.$transaction(async (tx) => {
     if (emailChanged) await ensureEmailAvailable(tx, input.email, user.id);
+    const employeeId = normalizeEmployeeId(input.employeeId);
+    await ensureEmployeeIdAvailable(tx, employeeId, user.id);
     await tx.user.update({
       where: { id: user.id },
       data: {
         name: input.name,
         email: input.email,
+        employeeId: employeeId ?? null,
         jobTitle: input.jobTitle ?? null,
         department: input.department ?? null,
         phone: input.phone ?? null,

@@ -24,31 +24,29 @@ export function EmployeeDashboard({ data, range, name }: { data: Data; range: Da
         actions={
           <>
             <RangeSelect value={range.key} />
-            <Button asChild variant="outline">
-              <Link href="/my-tasks">
-                <ListTodo /> My Tasks
-              </Link>
-            </Button>
             <Button asChild>
               <Link href="/open-tasks">
-                <Hand /> OPEN Tasks{counts.openAvailable ? ` (${counts.openAvailable})` : ""}
+                <Hand /> Claim OPEN{counts.openAvailable ? ` (${counts.openAvailable})` : ""}
               </Link>
             </Button>
           </>
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Active" value={counts.active} icon={<ListTodo />} tone="brand" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <StatCard label="My active" value={counts.active} icon={<ListTodo />} tone="brand" />
         <StatCard label="Overdue" value={counts.overdue} icon={<AlertTriangle />} tone="red" />
         <StatCard label="Due in 7 days" value={counts.dueSoon} icon={<CalendarClock />} tone="amber" />
         <StatCard label="Completed" value={counts.completedInRange} icon={<CheckCircle2 />} tone="emerald" hint={range.label} />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 md:gap-4">
         <StatCard
           label="Completion rate"
           value={completion.rate === null ? "—" : `${completion.rate}%`}
           icon={<Target />}
           tone="emerald"
-          hint={completion.total ? `${completion.completed} of ${completion.total} tasks in period` : "No tasks in this period"}
+          hint={completion.total ? `${completion.completed} of ${completion.total} in period` : "No tasks in this period"}
         />
         <StatCard
           label="Avg. progress"

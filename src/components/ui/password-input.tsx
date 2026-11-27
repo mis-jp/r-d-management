@@ -30,6 +30,7 @@ export function PasswordInput({ className, defaultVisible = false, id, ...props 
         className="absolute right-1 top-1/2 z-10 -translate-y-1/2 inline-flex size-8 items-center justify-center rounded-md text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30"
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
+        suppressHydrationWarning
       >
         {visible ? <EyeOff className="size-[18px]" aria-hidden /> : <Eye className="size-[18px]" aria-hidden />}
       </button>

@@ -2,7 +2,7 @@
 
 Internal web app for the Research & Development department. Admins create, assign, and review research tasks or publish them as **OPEN** for the team to claim. Employees track status, progress, and time on their own work.
 
-Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Prisma 6, and MySQL.
+Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Prisma 6, and Neon Postgres.
 
 ## Features
 
@@ -29,7 +29,7 @@ Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Prism
 ## Requirements
 
 - Node.js 20.19+ (22 LTS recommended)
-- MySQL 8.0+ (or MariaDB 10.6+)
+- Neon Postgres (pooled connection string) — or any Postgres 15+ compatible with Prisma
 
 ## Environment variables
 
@@ -37,9 +37,10 @@ Copy `.env.example` to `.env` and fill in the values. Never commit `.env`.
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | MySQL connection string, e.g. `mysql://USER:PASSWORD@localhost:3306/rd_tasks` |
+| `DATABASE_URL` | Neon/Postgres URL (prefer `*-pooler.*` with `pgbouncer=true&connection_limit=3`) |
 | `SESSION_SECRET` | Random string, at least 32 characters, used to sign session cookies |
 | `UPLOAD_DIR` | Where attachments are stored on disk (default `storage/uploads`) |
+| `LOGIN_RATE_LIMIT` | Optional. Defaults on in production; set `0` to disable locally |
 
 Generate a secret with:
 
@@ -50,8 +51,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ## Setup
 
 ```bash
-# 1. Create the database (in the MySQL client)
-CREATE DATABASE rd_tasks CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+# 1. Create a Neon Postgres database (or any Postgres 15+) and copy DATABASE_URL into .env
 
 # 2. Install dependencies (also generates the Prisma client)
 npm install

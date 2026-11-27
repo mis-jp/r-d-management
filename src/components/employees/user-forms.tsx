@@ -26,6 +26,7 @@ export type EditableUser = {
   id: string;
   name: string;
   email: string;
+  employeeId: string | null;
   role: Role;
   jobTitle: string | null;
   department: string | null;
@@ -70,6 +71,20 @@ export function ProfileFields({
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" htmlFor="name" required error={errors("name")}>
           <Input id="name" name="name" defaultValue={user?.name ?? ""} autoComplete="name" aria-invalid={!!errors("name")} />
+        </Field>
+        <Field
+          label="Employee ID"
+          htmlFor="employeeId"
+          error={errors("employeeId")}
+          hint="Company ID (e.g. KG0551). Shown for every account including admins."
+        >
+          <Input
+            id="employeeId"
+            name="employeeId"
+            defaultValue={user?.employeeId ?? ""}
+            placeholder="e.g. KG0551"
+            aria-invalid={!!errors("employeeId")}
+          />
         </Field>
         <Field label="Job title" htmlFor="jobTitle" error={errors("jobTitle")}>
           <Input id="jobTitle" name="jobTitle" defaultValue={user?.jobTitle ?? ""} placeholder="e.g. Research Engineer" />

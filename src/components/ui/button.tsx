@@ -41,7 +41,12 @@ export function Button({ className, variant, size, asChild, loading, disabled, c
     );
   }
   return (
-    <button className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} {...props}>
+    <button
+      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={disabled || loading}
+      suppressHydrationWarning
+      {...props}
+    >
       {loading && <Loader2 className="animate-spin" aria-hidden />}
       {children}
     </button>

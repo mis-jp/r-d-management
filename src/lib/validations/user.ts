@@ -10,8 +10,14 @@ export const passwordRule = z
 const email = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address.").max(191));
 const name = z.string().trim().min(2, "Name must be at least 2 characters.").max(120);
 
+const employeeId = optionalString(40).refine(
+  (v) => v === undefined || /^[A-Za-z0-9_-]+$/.test(v),
+  "Employee ID can only contain letters, numbers, hyphens, and underscores.",
+);
+
 const profileFields = {
   name,
+  employeeId,
   jobTitle: optionalString(120),
   department: optionalString(120),
   phone: optionalString(40),
@@ -19,8 +25,17 @@ const profileFields = {
   avatarColor: optionalString(20),
 };
 
+/** Email or employee ID (e.g. KG0751), same choice as Kelin Connect Flutter. */
 export const loginSchema = z.object({
-  email,
+  identifier: z
+    .string()
+    .trim()
+    .min(1, "Enter your employee ID or email.")
+    .max(191, "Too long.")
+    .refine(
+      (v) => v.includes("@") || /^[A-Za-z0-9_-]+$/.test(v),
+      "Enter a valid employee ID or email address.",
+    ),
   password: z.string().min(1, "Password is required.").max(128),
 });
 

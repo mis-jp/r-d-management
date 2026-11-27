@@ -23,6 +23,7 @@ export default async function ProfilePage() {
               id: user.id,
               name: user.name,
               email: user.email,
+              employeeId: user.employeeId,
               role: user.role,
               jobTitle: user.jobTitle,
               department: user.department,
@@ -46,6 +47,10 @@ export default async function ProfilePage() {
             <CardHeader title="Account" />
             <CardBody>
               <dl className="space-y-2 text-sm">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Employee ID</dt>
+                  <dd className="font-mono">{user.employeeId ?? "—"}</dd>
+                </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-500">Email</dt>
                   <dd className="truncate">{user.email}</dd>

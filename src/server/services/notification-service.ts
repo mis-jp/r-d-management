@@ -1,6 +1,7 @@
 import "server-only";
 import type { NotificationType } from "@prisma/client";
 import { db, type TxClient } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 
 type NotifyInput = {
   recipientIds: (string | null | undefined)[];
@@ -30,29 +31,43 @@ export async function activeAdminIds(tx: TxClient): Promise<string[]> {
 }
 
 export function unreadCount(userId: string) {
-  return db.notification.count({ where: { recipientId: userId, isRead: false } });
+  return withDbRetry(() =>
+    db.notification.count({ where: { recipientId: userId, isRead: false } }),
+  );
 }
 
 export function recentNotifications(userId: string, take = 8) {
-  return db.notification.findMany({
-    where: { recipientId: userId },
-    orderBy: { createdAt: "desc" },
-    take,
-    select: {
-      id: true,
-      type: true,
-      message: true,
-      isRead: true,
-      createdAt: true,
-      task: { select: { taskKey: true } },
-    },
-  });
+  return withDbRetry(() =>
+    db.notification.findMany({
+      where: { recipientId: userId },
+      orderBy: { createdAt: "desc" },
+      take,
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        isRead: true,
+        createdAt: true,
+        task: { select: { taskKey: true } },
+      },
+    }),
+  );
 }
 
 export async function markRead(userId: string, notificationId: string) {
-  await db.notification.updateMany({ where: { id: notificationId, recipientId: userId }, data: { isRead: true } });
+  await withDbRetry(() =>
+    db.notification.updateMany({
+      where: { id: notificationId, recipientId: userId },
+      data: { isRead: true },
+    }),
+  );
 }
 
 export async function markAllRead(userId: string) {
-  await db.notification.updateMany({ where: { recipientId: userId, isRead: false }, data: { isRead: true } });
+  await withDbRetry(() =>
+    db.notification.updateMany({
+      where: { recipientId: userId, isRead: false },
+      data: { isRead: true },
+    }),
+  );
 }

@@ -78,6 +78,8 @@ model User {
   id             String    @id @default(cuid())
   name           String    @db.VarChar(120)
   email          String    @unique @db.VarChar(191)
+  /** Company employee / login ID (e.g. KG0551). Shown for all users including admins. */
+  employeeId     String?   @unique @db.VarChar(40)
   passwordHash   String    @db.VarChar(255)
   role           Role      @default(EMPLOYEE)
   isActive       Boolean   @default(true)

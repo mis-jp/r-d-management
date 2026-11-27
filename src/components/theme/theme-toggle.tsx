@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -17,8 +18,32 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
   { value: "system", label: "System", Icon: Monitor },
 ];
 
+/** Stable SSR placeholder — avoids theme/localStorage mismatches during hydration. */
+function ThemeToggleShell({ className }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      className={cn("rounded-lg p-2 text-slate-600 hover:bg-slate-100", className)}
+      aria-label="Change theme"
+      suppressHydrationWarning
+    >
+      <Sun className="size-5" aria-hidden />
+    </button>
+  );
+}
+
 export function ThemeToggle({ className }: { className?: string }) {
   const { preference, resolved, setPreference } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <ThemeToggleShell className={className} />;
+  }
+
   const CurrentIcon = resolved === "dark" ? Moon : Sun;
 
   return (
@@ -26,6 +51,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       <DropdownMenuTrigger
         className={cn("rounded-lg p-2 text-slate-600 hover:bg-slate-100", className)}
         aria-label={`Theme: ${resolved === "dark" ? "dark" : "light"}. Change theme`}
+        suppressHydrationWarning
       >
         <CurrentIcon className="size-5" />
       </DropdownMenuTrigger>

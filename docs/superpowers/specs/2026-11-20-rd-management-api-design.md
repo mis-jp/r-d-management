@@ -53,6 +53,13 @@ Response envelope: `{ status: "success"|"error", success?: true, data? | message
 
 Auth header: `Authorization: Bearer <token>` or `X-RD-Session: <token>`.
 
+## Employee sync (added)
+
+- **Source (read-only):** `db_kelinconnect.employees` where `department = 'Research and Development'`
+- **Target (writable):** `db_rd_management.rd_users` only
+- **Actions:** `employees_source_preview` (admin), `employees_sync` (admin)
+- Never INSERT/UPDATE/DELETE/DROP against Kelin Connect or any other shared database
+
 ## Non-goals (v1)
 
 - Wiring the local Next.js UI to this API (follow-up)

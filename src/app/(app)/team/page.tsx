@@ -123,7 +123,13 @@ export default async function TeamPage({
                           <Avatar name={r.name} color={r.avatarColor} size="sm" />
                           <span>
                             <span className="block font-medium text-slate-900 hover:underline">{r.name}</span>
-                            {r.jobTitle && <span className="block text-xs text-slate-500">{r.jobTitle}</span>}
+                            <span className="block text-xs text-slate-500">
+                              {r.employeeId ? (
+                                <span className="font-mono">{r.employeeId}</span>
+                              ) : null}
+                              {r.employeeId && r.jobTitle ? " · " : null}
+                              {r.jobTitle}
+                            </span>
                           </span>
                           {heavy(r) && (
                             <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800">

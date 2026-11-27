@@ -2,6 +2,7 @@ import "server-only";
 import { addDays, endOfDay, endOfMonth, endOfWeek, startOfDay } from "date-fns";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 import { CLOSED_STATUSES, PAGE_SIZE } from "@/lib/constants";
 import type { SessionUser } from "@/lib/auth/session";
 import type { TaskFilters } from "@/lib/validations/task";
@@ -119,17 +120,19 @@ export function buildTaskOrder(filters: TaskFilters): Prisma.TaskOrderByWithRela
 export async function listTasks(viewer: SessionUser, scope: TaskScope, filters: TaskFilters, pageSize = PAGE_SIZE) {
   const where = buildTaskWhere(viewer, scope, filters);
   const page = filters.page ?? 1;
-  const [items, total] = await Promise.all([
-    db.task.findMany({
-      where,
-      orderBy: buildTaskOrder(filters),
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      select: taskListSelect,
-    }),
-    db.task.count({ where }),
-  ]);
-  return { items, total, page, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
+  return withDbRetry(async () => {
+    const [items, total] = await Promise.all([
+      db.task.findMany({
+        where,
+        orderBy: buildTaskOrder(filters),
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: taskListSelect,
+      }),
+      db.task.count({ where }),
+    ]);
+    return { items, total, page, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
+  });
 }
 
 /** Unpaginated variant for board and calendar views (capped to keep pages responsive). */
@@ -141,12 +144,14 @@ export function listTasksForView(
   take = 500,
 ) {
   const where = buildTaskWhere(viewer, scope, filters);
-  return db.task.findMany({
-    where: extra ? { AND: [where, extra] } : where,
-    orderBy: buildTaskOrder(filters),
-    take,
-    select: taskListSelect,
-  });
+  return withDbRetry(() =>
+    db.task.findMany({
+      where: extra ? { AND: [where, extra] } : where,
+      orderBy: buildTaskOrder(filters),
+      take,
+      select: taskListSelect,
+    }),
+  );
 }
 
 export function tasksDueBetween(viewer: SessionUser, start: Date, end: Date, includeOpen: boolean) {
@@ -156,11 +161,13 @@ export function tasksDueBetween(viewer: SessionUser, start: Date, end: Date, inc
       : includeOpen
         ? { OR: [{ assigneeId: viewer.id }, openTaskWhere()] }
         : { assigneeId: viewer.id };
-  return db.task.findMany({
-    where: { AND: [visibility, { isArchived: false, dueDate: { gte: start, lte: end } }] },
-    orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
-    select: taskListSelect,
-  });
+  return withDbRetry(() =>
+    db.task.findMany({
+      where: { AND: [visibility, { isArchived: false, dueDate: { gte: start, lte: end } }] },
+      orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
+      select: taskListSelect,
+    }),
+  );
 }
 
 export function dueSoonWhere(days = 7, now = new Date()): Prisma.TaskWhereInput {
@@ -214,12 +221,14 @@ export const taskDetailInclude = {
 export type TaskDetail = Prisma.TaskGetPayload<{ include: typeof taskDetailInclude }>;
 
 export function getTaskByKey(taskKey: string) {
-  return db.task.findUnique({ where: { taskKey }, include: taskDetailInclude });
+  return withDbRetry(() => db.task.findUnique({ where: { taskKey }, include: taskDetailInclude }));
 }
 
 export function listTags() {
-  return db.tag.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, color: true, _count: { select: { tasks: true } } },
-  });
+  return withDbRetry(() =>
+    db.tag.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true, _count: { select: { tasks: true } } },
+    }),
+  );
 }

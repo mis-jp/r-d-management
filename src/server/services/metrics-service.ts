@@ -42,7 +42,7 @@ function loadEmployees() {
     db.user.findMany({
       where: { role: "EMPLOYEE", isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, avatarColor: true, jobTitle: true },
+      select: { id: true, name: true, avatarColor: true, jobTitle: true, employeeId: true },
     }),
   );
 }

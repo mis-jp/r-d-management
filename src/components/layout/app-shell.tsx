@@ -36,7 +36,7 @@ import {
 import { LocalTime } from "@/components/shared/local-time";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { GlobalSearch } from "./global-search";
-import { ADMIN_NAV, COMMON_NAV, titleForPath, type NavItem } from "./nav-items";
+import { managementNavFor, titleForPath, workspaceNavFor, type NavItem } from "./nav-items";
 
 export type ShellUser = { id: string; name: string; email: string; role: Role; avatarColor: string | null; jobTitle: string | null };
 export type ShellNotification = {
@@ -79,21 +79,24 @@ export function AppShell({ user, unread, notifications, initialCollapsed, childr
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r bg-surface transition-[width] duration-200 lg:flex",
-          collapsed ? "w-[68px]" : "w-60",
+          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-slate-200/80 bg-surface transition-[width] duration-200 lg:flex",
+          collapsed ? "w-[72px]" : "w-64",
         )}
         aria-label="Main navigation"
       >
         <SidebarContent role={user.role} pathname={pathname} collapsed={collapsed} />
-        <div className="border-t p-2">
+        <div className="mt-auto border-t border-slate-200/80 p-3">
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900",
+              collapsed && "justify-center px-0",
+            )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
           >
-            {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            {collapsed ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
             {!collapsed && <span>Collapse</span>}
           </button>
         </div>
@@ -103,11 +106,11 @@ export function AppShell({ user, unread, notifications, initialCollapsed, childr
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <div className="absolute inset-0 bg-slate-950/40" onClick={() => setMobileOpen(false)} aria-hidden />
-          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-surface shadow-xl">
+          <aside className="absolute inset-y-0 left-0 flex w-[18.5rem] max-w-[85vw] flex-col bg-surface shadow-xl">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-3.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
+              className="absolute right-3 top-4 z-10 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               aria-label="Close navigation"
             >
               <X className="size-4" />
@@ -162,18 +165,37 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className={cn("flex h-14 items-center gap-2.5 border-b px-3", collapsed && "justify-center px-0")}>
+      <div
+        className={cn(
+          "flex shrink-0 items-center border-b border-slate-200/80",
+          collapsed ? "h-16 justify-center px-3" : "h-[4.25rem] px-4 pr-12 lg:pr-4",
+        )}
+      >
         {collapsed ? (
-          <BrandLogo mark className="size-8" />
+          <BrandLogo mark className="size-9" />
         ) : (
-          <BrandLogo className="h-9 w-auto max-w-[11.5rem]" />
+          <BrandLogo className="h-10 w-auto max-w-[13.5rem] object-contain object-left" />
         )}
       </div>
-      <nav className="flex-1 space-y-6 overflow-y-auto p-2 py-4 scrollbar-thin">
-        <NavSection title="Workspace" items={COMMON_NAV} pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
-        {role === "ADMIN" && (
-          <NavSection title="Management" items={ADMIN_NAV} pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
-        )}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+        <div className="space-y-5">
+          <NavSection
+            title="Workspace"
+            items={workspaceNavFor(role)}
+            pathname={pathname}
+            collapsed={collapsed}
+            onNavigate={onNavigate}
+          />
+          {role === "ADMIN" && (
+            <NavSection
+              title="Management"
+              items={managementNavFor(role)}
+              pathname={pathname}
+              collapsed={collapsed}
+              onNavigate={onNavigate}
+            />
+          )}
+        </div>
       </nav>
     </>
   );
@@ -194,8 +216,10 @@ function NavSection({
 }) {
   return (
     <div>
-      {!collapsed && <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{title}</p>}
-      <ul className="space-y-0.5">
+      {!collapsed && (
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{title}</p>
+      )}
+      <ul className="space-y-1">
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
@@ -207,13 +231,26 @@ function NavSection({
                 aria-current={active ? "page" : undefined}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                  collapsed && "justify-center px-0",
+                  "group flex items-center rounded-xl text-sm font-medium transition-colors",
+                  collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5",
+                  active
+                    ? "bg-brand-50 text-brand-700 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.12)]"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
-                <Icon className={cn("size-4 shrink-0", active ? "text-brand-600" : "text-slate-400")} aria-hidden />
-                {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
+                <span
+                  className={cn(
+                    "inline-flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+                    active ? "bg-brand-100/80 text-brand-700" : "text-slate-400 group-hover:text-slate-600",
+                  )}
+                >
+                  <Icon className="size-[18px]" aria-hidden />
+                </span>
+                {collapsed ? (
+                  <span className="sr-only">{item.label}</span>
+                ) : (
+                  <span className="min-w-0 flex-1 truncate leading-none">{item.label}</span>
+                )}
               </Link>
             </li>
           );

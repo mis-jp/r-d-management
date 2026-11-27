@@ -36,32 +36,42 @@ export function AdminDashboard({ data, range, name }: { data: Data; range: DateR
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {/* Primary signals first — keeps Overview scannable */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         <StatCard label="Active tasks" value={counts.active} icon={<ClipboardList />} tone="brand" hint="Not completed or cancelled" />
-        <StatCard label="OPEN tasks" value={counts.open} icon={<Hand />} tone="slate" hint="Waiting to be claimed" />
+        <StatCard label="OPEN to claim" value={counts.open} icon={<Hand />} tone="slate" hint="Waiting for someone to claim" />
+        <StatCard label="Overdue" value={counts.overdue} icon={<AlertTriangle />} tone="red" hint="Past due and still active" />
+        <StatCard
+          label="Awaiting review"
+          value={counts.inReview}
+          icon={<Eye />}
+          tone="purple"
+          hint="Ready for admin check"
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
         <StatCard label="In progress" value={counts.inProgress} icon={<CircleDot />} tone="blue" />
-        <StatCard label="Awaiting review" value={counts.inReview} icon={<Eye />} tone="purple" />
         <StatCard
           label="Completed"
           value={counts.completedInRange}
           icon={<CheckCircle2 />}
           tone="emerald"
-          hint={`In range · ${counts.completed} all time`}
+          hint={`${counts.completed} all time`}
         />
-        <StatCard label="Overdue" value={counts.overdue} icon={<AlertTriangle />} tone="red" hint="Past due and still active" />
         <StatCard
           label="Completion rate"
           value={completion.rate === null ? "—" : `${completion.rate}%`}
           icon={<Target />}
           tone="emerald"
-          hint={completion.total ? `${completion.completed} of ${completion.total} tasks in period` : "No tasks in this period"}
+          hint={completion.total ? `${completion.completed} of ${completion.total} in period` : "No tasks in this period"}
         />
         <StatCard
           label="Avg. progress"
           value={data.averageProgress === null ? "—" : `${data.averageProgress}%`}
           icon={<Gauge />}
           tone="amber"
-          hint="Mean progress of active tasks"
+          hint="Active tasks only"
         />
       </div>
 

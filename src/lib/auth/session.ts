@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db-retry";
 import { SESSION_COOKIE, sessionCookieOptions, signSession, verifySession } from "./token";
 
 export type SessionUser = {
@@ -36,19 +37,21 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   if (!payload) return null;
 
   try {
-    const user = await db.user.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        jobTitle: true,
-        avatarColor: true,
-        sessionVersion: true,
-      },
-    });
+    const user = await withDbRetry(() =>
+      db.user.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          jobTitle: true,
+          avatarColor: true,
+          sessionVersion: true,
+        },
+      }),
+    );
     if (!user || !user.isActive || user.sessionVersion !== payload.ver) return null;
 
     return {

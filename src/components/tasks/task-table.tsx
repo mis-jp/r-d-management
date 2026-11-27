@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageSquare, Paperclip } from "lucide-react";
 import type { TaskListItem } from "@/server/repositories/task-repository";
+import { isOpenTask } from "@/lib/permissions";
 import { Avatar, ProgressBar } from "@/components/ui/misc";
 import { DueDate, OpenBadge, PriorityBadge, StatusBadge, TagChip } from "./badges";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,10 @@ export function TaskTable({ tasks, showAssignee = true, empty }: Props) {
                         <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="sm" />
                         <span className="truncate text-slate-700">{t.assignee.name}</span>
                       </span>
-                    ) : (
+                    ) : isOpenTask(t) ? (
                       <OpenBadge />
+                    ) : (
+                      <span className="text-slate-400">—</span>
                     )}
                   </td>
                 )}
@@ -91,7 +94,12 @@ export function TaskTable({ tasks, showAssignee = true, empty }: Props) {
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
               <StatusBadge status={t.status} />
-              {showAssignee && (t.assignee ? <span className="text-slate-600">{t.assignee.name}</span> : <OpenBadge />)}
+              {showAssignee &&
+                (t.assignee ? (
+                  <span className="text-slate-600">{t.assignee.name}</span>
+                ) : isOpenTask(t) ? (
+                  <OpenBadge />
+                ) : null)}
               <DueDate date={t.dueDate} status={t.status} />
             </div>
             <div className="mt-2 flex items-center gap-2">

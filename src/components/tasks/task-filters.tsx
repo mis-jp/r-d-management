@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, X } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { PRIORITIES, PRIORITY_LABELS, STATUS_LABELS, TASK_STATUSES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
 import { useSetParams } from "@/components/shared/url-controls";
+import { cn } from "@/lib/utils";
 
 type Option = { id: string; name: string };
 
@@ -28,6 +29,7 @@ const DEFAULT_SORTS = [
 ];
 
 const FILTER_KEYS = ["q", "status", "priority", "assignee", "tag", "due", "archived", "sort", "dir", "createdFrom", "createdTo"];
+const ADVANCED_KEYS = ["assignee", "tag", "due", "archived", "sort", "dir", "createdFrom", "createdTo"];
 
 export function TaskFilters({
   tags,
@@ -41,6 +43,9 @@ export function TaskFilters({
   const urlQuery = params.get("q") ?? "";
   const [q, setQ] = useState(urlQuery);
   const [syncedQuery, setSyncedQuery] = useState(urlQuery);
+  const advancedActive = ADVANCED_KEYS.some((k) => params.get(k));
+  const [showAdvanced, setShowAdvanced] = useState(advancedActive);
+
   if (urlQuery !== syncedQuery) {
     setSyncedQuery(urlQuery);
     setQ(urlQuery);
@@ -56,7 +61,7 @@ export function TaskFilters({
   const value = (k: string) => params.get(k) ?? "";
 
   return (
-    <div className="flex flex-col gap-3 border-b p-4" aria-busy={pending}>
+    <div className="flex flex-col gap-3 border-b bg-surface/80 p-4" aria-busy={pending}>
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-52 flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
@@ -89,93 +94,113 @@ export function TaskFilters({
             </option>
           ))}
         </FilterSelect>
-        {assignees && (
-          <FilterSelect label="Assignee" value={value("assignee")} onChange={(v) => setParams({ assignee: v })}>
-            <option value="">All assignees</option>
-            <option value="open">OPEN (unassigned)</option>
-            {assignees.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </FilterSelect>
-        )}
-        <FilterSelect label="Tag" value={value("tag")} onChange={(v) => setParams({ tag: v })}>
-          <option value="">All tags</option>
-          {tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label="Due date" value={value("due")} onChange={(v) => setParams({ due: v })}>
-          <option value="">Any due date</option>
-          <option value="overdue">Overdue</option>
-          <option value="today">Due today</option>
-          <option value="week">Due this week</option>
-          <option value="month">Due this month</option>
-          <option value="none">No due date</option>
-        </FilterSelect>
-        {showArchived && (
-          <FilterSelect label="Archived" value={value("archived")} onChange={(v) => setParams({ archived: v })}>
-            <option value="">Hide archived</option>
-            <option value="include">Include archived</option>
-            <option value="only">Archived only</option>
-          </FilterSelect>
-        )}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {showCreatedRange && (
-          <>
-            <label className="text-xs text-slate-500" htmlFor="created-from">
-              Created
-            </label>
-            <Input
-              id="created-from"
-              type="date"
-              value={value("createdFrom")}
-              onChange={(e) => setParams({ createdFrom: e.target.value })}
-              className="h-8 w-36 text-xs"
-              aria-label="Created from"
-            />
-            <span className="text-xs text-slate-400">to</span>
-            <Input
-              type="date"
-              value={value("createdTo")}
-              onChange={(e) => setParams({ createdTo: e.target.value })}
-              className="h-8 w-36 text-xs"
-              aria-label="Created to"
-            />
-          </>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <FilterSelect label="Sort by" value={value("sort")} onChange={(v) => setParams({ sort: v, dir: null })}>
-            <option value="">Sort: default</option>
-            {sortOptions.map((s) => (
-              <option key={s.value} value={s.value}>
-                Sort: {s.label}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterSelect label="Sort direction" value={value("dir")} onChange={(v) => setParams({ dir: v })}>
-            <option value="">Default order</option>
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </FilterSelect>
-          {active && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setQ("");
-                setParams(Object.fromEntries(FILTER_KEYS.map((k) => [k, null])));
-              }}
-            >
-              <X /> Reset filters
-            </Button>
+        <Button
+          type="button"
+          variant={showAdvanced || advancedActive ? "secondary" : "outline"}
+          size="sm"
+          className="h-9"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-expanded={showAdvanced}
+        >
+          <SlidersHorizontal />
+          More filters
+          {advancedActive && (
+            <span className="rounded-full bg-brand-100 px-1.5 text-[10px] font-semibold text-brand-700">on</span>
           )}
-        </div>
+          <ChevronDown className={cn("size-3.5 transition-transform", showAdvanced && "rotate-180")} />
+        </Button>
+        {active && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => {
+              setQ("");
+              setParams(Object.fromEntries(FILTER_KEYS.map((k) => [k, null])));
+            }}
+          >
+            <X /> Clear
+          </Button>
+        )}
       </div>
+
+      {showAdvanced && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">More filters</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {assignees && (
+              <FilterSelect label="Assignee" value={value("assignee")} onChange={(v) => setParams({ assignee: v })}>
+                <option value="">All assignees</option>
+                <option value="open">OPEN (unassigned)</option>
+                {assignees.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </FilterSelect>
+            )}
+            <FilterSelect label="Tag" value={value("tag")} onChange={(v) => setParams({ tag: v })}>
+              <option value="">All tags</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect label="Due date" value={value("due")} onChange={(v) => setParams({ due: v })}>
+              <option value="">Any due date</option>
+              <option value="overdue">Overdue</option>
+              <option value="today">Due today</option>
+              <option value="week">Due this week</option>
+              <option value="month">Due this month</option>
+              <option value="none">No due date</option>
+            </FilterSelect>
+            {showArchived && (
+              <FilterSelect label="Archived" value={value("archived")} onChange={(v) => setParams({ archived: v })}>
+                <option value="">Hide archived</option>
+                <option value="include">Include archived</option>
+                <option value="only">Archived only</option>
+              </FilterSelect>
+            )}
+            {showCreatedRange && (
+              <>
+                <label className="text-xs text-slate-500" htmlFor="created-from">
+                  Created
+                </label>
+                <Input
+                  id="created-from"
+                  type="date"
+                  value={value("createdFrom")}
+                  onChange={(e) => setParams({ createdFrom: e.target.value })}
+                  className="h-9 w-36 text-xs"
+                  aria-label="Created from"
+                />
+                <span className="text-xs text-slate-400">to</span>
+                <Input
+                  type="date"
+                  value={value("createdTo")}
+                  onChange={(e) => setParams({ createdTo: e.target.value })}
+                  className="h-9 w-36 text-xs"
+                  aria-label="Created to"
+                />
+              </>
+            )}
+            <FilterSelect label="Sort by" value={value("sort")} onChange={(v) => setParams({ sort: v, dir: null })}>
+              <option value="">Sort: default</option>
+              {sortOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  Sort: {s.label}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect label="Sort direction" value={value("dir")} onChange={(v) => setParams({ dir: v })}>
+              <option value="">Default order</option>
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </FilterSelect>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

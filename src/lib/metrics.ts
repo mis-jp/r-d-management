@@ -108,7 +108,13 @@ export function averageCompletionDays(tasks: MetricTask[], range: DateRange): nu
   return Math.round((totalMs / done.length / 86_400_000) * 10) / 10;
 }
 
-export type EmployeeRef = { id: string; name: string; avatarColor: string | null; jobTitle: string | null };
+export type EmployeeRef = {
+  id: string;
+  name: string;
+  avatarColor: string | null;
+  jobTitle: string | null;
+  employeeId?: string | null;
+};
 
 export function employeeWorkload(employees: EmployeeRef[], tasks: MetricTask[], range: DateRange, now = new Date()) {
   return employees.map((e) => {
